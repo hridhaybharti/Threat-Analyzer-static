@@ -62,6 +62,30 @@ BRANDS = {
     "outlook",
     "office",
     "telegram",
+    "chatgpt",
+    "openai",
+    "google",
+    "youtube",
+    "linkedin",
+    "twitter",
+    "x",
+}
+
+# Domains that are virtually guaranteed to be safe (Top-tier global services).
+TOP_TIER_DOMAINS = {
+    "chatgpt.com",
+    "openai.com",
+    "google.com",
+    "github.com",
+    "microsoft.com",
+    "apple.com",
+    "amazon.com",
+    "facebook.com",
+    "instagram.com",
+    "linkedin.com",
+    "twitter.com",
+    "x.com",
+    "youtube.com",
 }
 
 PARKING_NS_KEYWORDS = {
@@ -447,6 +471,25 @@ def typosquatting_signal(domain: str) -> Optional[Dict[str, Any]]:
     return None
 
 
+def reputable_domain_signal(domain: str) -> Optional[Dict[str, Any]]:
+    # Normalize domain: strip www and trailing dots
+    d = domain.lower().strip(".")
+    if d.startswith("www."):
+        d = d[4:]
+
+    if d in TOP_TIER_DOMAINS:
+        return {
+            "name": "Top-Tier Reputable Domain",
+            "category": "domain",
+            "bucket": "reputation",
+            "impact": -60,  # Massive negative risk (trust mass)
+            "confidence": 0.98,
+            "description": f"Domain {domain} is a globally recognized reputable service.",
+            "evidence": {"domain": d},
+        }
+    return None
+
+
 async def domain_signals_async(domain: str) -> List[Dict[str, Any]]:
     """Asynchronous version of domain_signals that runs I/O in parallel."""
     
@@ -461,6 +504,10 @@ async def domain_signals_async(domain: str) -> List[Dict[str, Any]]:
     st = suspicious_tld_signal(domain)
     if st:
         signals.append(st)
+
+    rt = reputable_domain_signal(domain)
+    if rt:
+        signals.append(rt)
 
     signals.append(domain_age_signal(domain, days_meta=days_meta))
     signals.append(registrar_reputation_signal(domain, days_meta=days_meta))
@@ -481,6 +528,10 @@ def domain_signals(domain: str) -> List[Dict[str, Any]]:
     st = suspicious_tld_signal(domain)
     if st:
         signals.append(st)
+
+    rt = reputable_domain_signal(domain)
+    if rt:
+        signals.append(rt)
 
     signals.append(domain_age_signal(domain))
     signals.append(registrar_reputation_signal(domain))

@@ -11,6 +11,7 @@
     "Domain Age": 1.0,
     "Registrar Reputation": 1.0,
     "Registrar Randomness": 1.0,
+    "Top-Tier Reputable Domain": 1.0,
     "DNS Nameservers": 1.0,
     "DNS A/AAAA": 1.0,
     "Parked Domain Suspected": 1.0,
