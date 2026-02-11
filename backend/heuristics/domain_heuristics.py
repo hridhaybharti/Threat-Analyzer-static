@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional
 
 from backend.utils.dns_utils import dns_overview, dns_overview_async
 from backend.utils.whois_utils import domain_age_days, domain_age_days_async
+from backend.utils.reputation import reputation_service
 
 
 SUSPICIOUS_TLDS = {
@@ -472,20 +473,22 @@ def typosquatting_signal(domain: str) -> Optional[Dict[str, Any]]:
 
 
 def reputable_domain_signal(domain: str) -> Optional[Dict[str, Any]]:
-    # Normalize domain: strip www and trailing dots
+    # 1. Check hardcoded top-tier list first (fastest)
     d = domain.lower().strip(".")
     if d.startswith("www."):
         d = d[4:]
 
-    if d in TOP_TIER_DOMAINS:
+    is_reputable = (d in TOP_TIER_DOMAINS) or reputation_service.is_reputable(domain)
+
+    if is_reputable:
         return {
             "name": "Top-Tier Reputable Domain",
             "category": "domain",
             "bucket": "reputation",
-            "impact": -60,  # Massive negative risk (trust mass)
+            "impact": -65,  # Increased trust impact
             "confidence": 0.98,
-            "description": f"Domain {domain} is a globally recognized reputable service.",
-            "evidence": {"domain": d},
+            "description": f"Domain {domain} is recognized as a highly reputable global service.",
+            "evidence": {"domain": d, "source": "Tranco-100K"},
         }
     return None
 

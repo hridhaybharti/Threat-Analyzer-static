@@ -4,6 +4,7 @@ from backend.api.analyze import router as analyze_router
 from backend.api.explain import router as explain_router
 from backend.api.history import router as history_router
 from backend.persistence.sqlite_store import init_db
+from backend.utils.reputation import reputation_service
 
 
 def create_app() -> FastAPI:
@@ -19,6 +20,7 @@ def create_app() -> FastAPI:
     @app.on_event("startup")
     def _startup() -> None:
         init_db()
+        reputation_service.load_dataset()
 
     app.include_router(analyze_router, prefix="/api")
     app.include_router(history_router, prefix="/api")
