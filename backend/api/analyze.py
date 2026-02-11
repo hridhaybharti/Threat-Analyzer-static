@@ -13,10 +13,16 @@ from backend.analyzers.url import analyze_url_explain, analyze_url_explain_async
 from backend.persistence.sqlite_store import save_analysis
 from backend.utils.logging_utils import log_analysis_event
 from backend.utils.validators import detect_target_type
+from backend.utils.reputation import reputation_service
 
 
 logger = logging.getLogger("security_analyzer")
 router = APIRouter(tags=["analyze"])
+
+
+@router.get("/reputation/status")
+def reputation_status():
+    return reputation_service.get_status()
 
 
 class AnalyzeRequest(BaseModel):

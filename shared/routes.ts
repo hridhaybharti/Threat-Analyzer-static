@@ -54,6 +54,20 @@ export const api = {
       },
     },
   },
+  reputation: {
+    status: {
+      method: 'GET' as const,
+      path: '/api/reputation/status',
+      responses: {
+        200: z.object({
+          loaded: z.boolean(),
+          count: z.number(),
+          last_sync: z.string().nullable(),
+          source: z.string(),
+        }),
+      },
+    },
+  },
 };
 
 export function buildUrl(path: string, params?: Record<string, string | number>): string {

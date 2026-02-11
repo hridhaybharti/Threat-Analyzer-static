@@ -130,3 +130,24 @@ export function useClearHistory() {
     },
   });
 }
+
+/* ---------------- Reputation Status ---------------- */
+
+export function useReputationStatus() {
+  return useQuery({
+    queryKey: ["/api/reputation/status"],
+    queryFn: async () => {
+      const res = await fetch("/api/reputation/status", {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch reputation status");
+      return res.json() as Promise<{
+        loaded: boolean;
+        count: number;
+        last_sync: string | null;
+        source: string;
+      }>;
+    },
+    refetchInterval: 60000, // Poll every minute
+  });
+}

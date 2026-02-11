@@ -1,13 +1,20 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { useCreateAnalysis } from "@/hooks/use-analysis";
+import { useCreateAnalysis, useReputationStatus } from "@/hooks/use-analysis";
 import { detectInputType, type InputType } from "@/lib/detectInputType";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 import {
   Shield,
@@ -17,6 +24,9 @@ import {
   Search,
   Loader2,
   RotateCcw,
+  CheckCircle,
+  AlertCircle,
+  Database,
 } from "lucide-react";
 
 export default function Dashboard() {
@@ -27,6 +37,7 @@ export default function Dashboard() {
   const [userOverride, setUserOverride] = useState(false);
 
   const { mutate, isPending } = useCreateAnalysis();
+  const { data: reputation } = useReputationStatus();
 
   /* ---------------- Hybrid auto-detect ---------------- */
   useEffect(() => {
@@ -115,6 +126,44 @@ export default function Dashboard() {
           <p className="text-slate-400 text-lg max-w-lg mx-auto">
             Analyze domains, IPs, and URLs using real security intelligence and heuristics.
           </p>
+
+          {/* Reputation Sync Status */}
+          <div className="flex justify-center pt-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge 
+                    variant="outline" 
+                    className={`gap-1.5 py-1 px-3 border transition-all duration-500 cursor-help
+                      ${reputation?.loaded 
+                        ? 'bg-emerald-500/5 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/10' 
+                        : 'bg-slate-500/5 text-slate-400 border-slate-700 hover:bg-slate-500/10'}`}
+                  >
+                    <Database className={`w-3.5 h-3.5 ${!reputation?.loaded ? 'animate-pulse' : ''}`} />
+                    {reputation?.loaded ? `Global Reputation: ${reputation.count.toLocaleString()} domains` : 'Loading Global Reputation...'}
+                    {reputation?.loaded ? (
+                      <CheckCircle className="w-3 h-3 ml-0.5" />
+                    ) : (
+                      <Loader2 className="w-3 h-3 animate-spin ml-0.5" />
+                    )}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-[280px] p-3 bg-slate-900 border-slate-800 text-slate-300">
+                  <div className="space-y-1.5">
+                    <p className="font-semibold text-white">Trust Intelligence Sync</p>
+                    <p className="text-xs leading-relaxed">
+                      Automatically synced with the <span className="text-emerald-400">Tranco Top 100K</span> authority list to identify and white-label reputable services.
+                    </p>
+                    {reputation?.last_sync && (
+                      <p className="text-[10px] text-slate-500 pt-1 border-t border-slate-800">
+                        Last sync: {reputation.last_sync}
+                      </p>
+                    )}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
 
         {/* Input Card */}
