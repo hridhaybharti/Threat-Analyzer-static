@@ -1,5 +1,6 @@
 ﻿from __future__ import annotations
 
+import asyncio
 import ipaddress
 import socket
 from functools import lru_cache
@@ -58,13 +59,14 @@ def _rdap_lookup(ip: str) -> Dict[str, Any]:
     return IPWhois(ip).lookup_rdap(depth=1)
 
 
-@lru_cache(maxsize=2048)
-def _reverse_dns(ip: str) -> Optional[str]:
-    try:
-        name, _, _ = socket.gethostbyaddr(ip)
-        return name.lower()
-    except Exception:
-        return None
+async def _rdap_lookup_async(ip: str) -> Dict[str, Any]:
+    """Asynchronous version of _rdap_lookup using asyncio.to_thread."""
+    return await asyncio.to_thread(_rdap_lookup, ip)
+
+
+async def _reverse_dns_async(ip: str) -> Optional[str]:
+    """Asynchronous version of _reverse_dns using asyncio.to_thread."""
+    return await asyncio.to_thread(_reverse_dns, ip)
 
 
 def private_public_signal(ip: str) -> Dict[str, Any]:
@@ -162,9 +164,13 @@ def _provider_cluster(asn_desc: str, net_name: Optional[str]) -> Optional[str]:
     return None
 
 
-def asn_isp_type_signal(ip: str) -> Dict[str, Any]:
+def asn_isp_type_signal(ip: str, rdap_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     try:
-        data = _rdap_lookup(ip)
+        if rdap_data is None:
+            data = _rdap_lookup(ip)
+        else:
+            data = rdap_data
+        
         asn = data.get("asn")
         asn_desc = (data.get("asn_description") or "").lower()
         net_name = (data.get("network", {}) or {}).get("name")
@@ -215,11 +221,15 @@ def asn_isp_type_signal(ip: str) -> Dict[str, Any]:
         }
 
 
-def hosting_provider_cluster_signal(ip: str) -> Dict[str, Any]:
+def hosting_provider_cluster_signal(ip: str, rdap_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Provide a lightweight provider grouping for auditability and clustering."""
 
     try:
-        data = _rdap_lookup(ip)
+        if rdap_data is None:
+            data = _rdap_lookup(ip)
+        else:
+            data = rdap_data
+        
         asn_desc = data.get("asn_description") or ""
         net_name = (data.get("network", {}) or {}).get("name")
 
@@ -257,9 +267,13 @@ def hosting_provider_cluster_signal(ip: str) -> Dict[str, Any]:
         }
 
 
-def country_risk_signal(ip: str) -> Dict[str, Any]:
+def country_risk_signal(ip: str, rdap_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     try:
-        data = _rdap_lookup(ip)
+        if rdap_data is None:
+            data = _rdap_lookup(ip)
+        else:
+            data = rdap_data
+        
         cc = (data.get("asn_country_code") or "").upper()
         risk = COUNTRY_RISK.get(cc, 0)
 
@@ -296,11 +310,18 @@ def country_risk_signal(ip: str) -> Dict[str, Any]:
         }
 
 
-def tor_vpn_indicators_signal(ip: str) -> Dict[str, Any]:
-    rdns = _reverse_dns(ip) or ""
+def tor_vpn_indicators_signal(ip: str, rdns_data: Optional[str] = None, rdap_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    if rdns_data is None:
+        rdns = _reverse_dns(ip) or ""
+    else:
+        rdns = rdns_data or ""
 
     try:
-        data = _rdap_lookup(ip)
+        if rdap_data is None:
+            data = _rdap_lookup(ip)
+        else:
+            data = rdap_data
+        
         asn_desc = (data.get("asn_description") or "").lower()
     except Exception:
         asn_desc = ""
@@ -330,6 +351,25 @@ def tor_vpn_indicators_signal(ip: str) -> Dict[str, Any]:
         "description": "No obvious TOR/VPN indicators found via reverse DNS / ASN keywords.",
         "evidence": {"reverse_dns": rdns or None},
     }
+
+
+async def ip_signals_async(ip: str) -> List[Dict[str, Any]]:
+    """Asynchronous version of ip_signals that runs I/O in parallel."""
+    
+    # Run RDAP and Reverse DNS lookups in parallel
+    rdap_task = _rdap_lookup_async(ip)
+    rdns_task = _reverse_dns_async(ip)
+    
+    rdap_data, rdns_data = await asyncio.gather(rdap_task, rdns_task)
+    
+    return [
+        private_public_signal(ip),
+        ipv6_specific_signal(ip),
+        asn_isp_type_signal(ip, rdap_data=rdap_data),
+        hosting_provider_cluster_signal(ip, rdap_data=rdap_data),
+        country_risk_signal(ip, rdap_data=rdap_data),
+        tor_vpn_indicators_signal(ip, rdns_data=rdns_data, rdap_data=rdap_data),
+    ]
 
 
 def ip_signals(ip: str) -> List[Dict[str, Any]]:

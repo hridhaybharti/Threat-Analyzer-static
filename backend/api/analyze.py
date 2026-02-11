@@ -7,9 +7,9 @@ from typing import Any, Dict, Literal, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from backend.analyzers.domain import analyze_domain_explain
-from backend.analyzers.ip import analyze_ip_explain
-from backend.analyzers.url import analyze_url_explain
+from backend.analyzers.domain import analyze_domain_explain, analyze_domain_explain_async
+from backend.analyzers.ip import analyze_ip_explain, analyze_ip_explain_async
+from backend.analyzers.url import analyze_url_explain, analyze_url_explain_async
 from backend.persistence.sqlite_store import save_analysis
 from backend.utils.logging_utils import log_analysis_event
 from backend.utils.validators import detect_target_type
@@ -38,7 +38,7 @@ def _resolve_target(req: AnalyzeRequest) -> str:
 
 
 @router.post("/analyze", status_code=201)
-def analyze(req: AnalyzeRequest) -> Dict[str, Any]:
+async def analyze(req: AnalyzeRequest) -> Dict[str, Any]:
     start = time.perf_counter()
 
     try:
@@ -46,19 +46,19 @@ def analyze(req: AnalyzeRequest) -> Dict[str, Any]:
 
         # Compute analysis (public result) and explain blob (for persistence).
         if req.type == "url":
-            result, explain = analyze_url_explain(target)
+            result, explain = await analyze_url_explain_async(target)
         elif req.type == "ip":
-            result, explain = analyze_ip_explain(target)
+            result, explain = await analyze_ip_explain_async(target)
         elif req.type == "domain":
-            result, explain = analyze_domain_explain(target)
+            result, explain = await analyze_domain_explain_async(target)
         else:
             detected, normalized = detect_target_type(target)
             if detected == "url":
-                result, explain = analyze_url_explain(target)
+                result, explain = await analyze_url_explain_async(target)
             elif detected == "ip":
-                result, explain = analyze_ip_explain(normalized)
+                result, explain = await analyze_ip_explain_async(normalized)
             else:
-                result, explain = analyze_domain_explain(normalized)
+                result, explain = await analyze_domain_explain_async(normalized)
 
         analysis_id = None
         persistence_ok = False

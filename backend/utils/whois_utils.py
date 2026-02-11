@@ -1,5 +1,6 @@
 ﻿from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional, Tuple
 
@@ -38,8 +39,31 @@ def whois_summary(domain: str) -> Dict[str, Any]:
     }
 
 
+async def whois_summary_async(domain: str) -> Dict[str, Any]:
+    """Asynchronous version of whois_summary using asyncio.to_thread."""
+    return await asyncio.to_thread(whois_summary, domain)
+
+
 def domain_age_days(domain: str) -> Tuple[Optional[int], Dict[str, Any]]:
     summary = whois_summary(domain)
+    if not summary.get("ok"):
+        return None, summary
+
+    creation = summary.get("creation_date")
+    if not isinstance(creation, datetime):
+        return None, summary
+
+    if creation.tzinfo is None:
+        creation = creation.replace(tzinfo=timezone.utc)
+
+    now = datetime.now(timezone.utc)
+    delta = now - creation
+    return max(0, int(delta.days)), summary
+
+
+async def domain_age_days_async(domain: str) -> Tuple[Optional[int], Dict[str, Any]]:
+    """Asynchronous version of domain_age_days."""
+    summary = await whois_summary_async(domain)
     if not summary.get("ok"):
         return None, summary
 

@@ -1,10 +1,11 @@
 ﻿from __future__ import annotations
 
+import asyncio
 import math
 from typing import Any, Dict, List, Optional
 
-from backend.utils.dns_utils import dns_overview
-from backend.utils.whois_utils import domain_age_days
+from backend.utils.dns_utils import dns_overview, dns_overview_async
+from backend.utils.whois_utils import domain_age_days, domain_age_days_async
 
 
 SUSPICIOUS_TLDS = {
@@ -138,8 +139,12 @@ def suspicious_tld_signal(domain: str) -> Optional[Dict[str, Any]]:
     return None
 
 
-def domain_age_signal(domain: str) -> Dict[str, Any]:
-    days, meta = domain_age_days(domain)
+def domain_age_signal(domain: str, days_meta: Optional[Tuple[Optional[int], Dict[str, Any]]] = None) -> Dict[str, Any]:
+    if days_meta is None:
+        days, meta = domain_age_days(domain)
+    else:
+        days, meta = days_meta
+
     if days is None:
         return {
             "name": "Domain Age",
@@ -189,8 +194,12 @@ def domain_age_signal(domain: str) -> Dict[str, Any]:
     }
 
 
-def registrar_reputation_signal(domain: str) -> Dict[str, Any]:
-    _, meta = domain_age_days(domain)
+def registrar_reputation_signal(domain: str, days_meta: Optional[Tuple[Optional[int], Dict[str, Any]]] = None) -> Dict[str, Any]:
+    if days_meta is None:
+        _, meta = domain_age_days(domain)
+    else:
+        _, meta = days_meta
+    
     registrar = (meta.get("registrar") or "") if isinstance(meta, dict) else ""
     registrar_norm = str(registrar).strip().lower()
 
@@ -238,13 +247,17 @@ def registrar_reputation_signal(domain: str) -> Dict[str, Any]:
     }
 
 
-def registrar_randomness_signal(domain: str) -> Dict[str, Any]:
+def registrar_randomness_signal(domain: str, days_meta: Optional[Tuple[Optional[int], Dict[str, Any]]] = None) -> Dict[str, Any]:
     """Detect unusual registrar strings.
 
     This is a weak heuristic: registrar names are usually human-readable, so we treat this as low confidence.
     """
 
-    _, meta = domain_age_days(domain)
+    if days_meta is None:
+        _, meta = domain_age_days(domain)
+    else:
+        _, meta = days_meta
+
     registrar = (meta.get("registrar") or "") if isinstance(meta, dict) else ""
     registrar_s = str(registrar).strip()
     registrar_norm = registrar_s.lower()
@@ -297,8 +310,10 @@ def registrar_randomness_signal(domain: str) -> Dict[str, Any]:
     }
 
 
-def dns_validity_signals(domain: str) -> List[Dict[str, Any]]:
-    ov = dns_overview(domain)
+def dns_validity_signals(domain: str, ov: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    if ov is None:
+        ov = dns_overview(domain)
+    
     signals: List[Dict[str, Any]] = []
 
     if not ov.get("has_ns"):
@@ -354,14 +369,16 @@ def dns_validity_signals(domain: str) -> List[Dict[str, Any]]:
     return signals
 
 
-def parked_domain_signal(domain: str) -> Dict[str, Any]:
+def parked_domain_signal(domain: str, ov: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Best-effort parked domain detection.
 
     This relies on NS keywords and the absence of typical email infrastructure (MX).
     It will miss many parked domains, and it can false-positive.
     """
 
-    ov = dns_overview(domain)
+    if ov is None:
+        ov = dns_overview(domain)
+    
     ns = [str(x).lower() for x in (ov.get("NS") or [])]
 
     ns_hit = None
@@ -428,6 +445,34 @@ def typosquatting_signal(domain: str) -> Optional[Dict[str, Any]]:
             }
 
     return None
+
+
+async def domain_signals_async(domain: str) -> List[Dict[str, Any]]:
+    """Asynchronous version of domain_signals that runs I/O in parallel."""
+    
+    # Run DNS and WHOIS lookups in parallel
+    dns_task = dns_overview_async(domain)
+    whois_task = domain_age_days_async(domain)
+    
+    ov, days_meta = await asyncio.gather(dns_task, whois_task)
+    
+    signals: List[Dict[str, Any]] = []
+
+    st = suspicious_tld_signal(domain)
+    if st:
+        signals.append(st)
+
+    signals.append(domain_age_signal(domain, days_meta=days_meta))
+    signals.append(registrar_reputation_signal(domain, days_meta=days_meta))
+    signals.append(registrar_randomness_signal(domain, days_meta=days_meta))
+    signals.extend(dns_validity_signals(domain, ov=ov))
+    signals.append(parked_domain_signal(domain, ov=ov))
+
+    ts = typosquatting_signal(domain)
+    if ts:
+        signals.append(ts)
+
+    return signals
 
 
 def domain_signals(domain: str) -> List[Dict[str, Any]]:

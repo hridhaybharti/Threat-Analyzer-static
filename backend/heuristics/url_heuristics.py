@@ -1,5 +1,6 @@
 ﻿from __future__ import annotations
 
+import asyncio
 import math
 from typing import Any, Dict, List
 
@@ -339,6 +340,33 @@ def redirect_count_signal(url: str, max_redirects: int = 5) -> Dict[str, Any]:
             "description": "Redirect check could not be performed (network blocked or request failed).",
             "evidence": {"error": str(e)},
         }
+
+
+async def redirect_count_signal_async(url: str, max_redirects: int = 5) -> Dict[str, Any]:
+    """Asynchronous version of redirect_count_signal using asyncio.to_thread."""
+    return await asyncio.to_thread(redirect_count_signal, url, max_redirects)
+
+
+async def url_signals_async(url: str) -> List[Dict[str, Any]]:
+    """Asynchronous version of url_signals running blocking checks in parallel."""
+    
+    # Run network-bound signals in parallel
+    redirect_task = redirect_count_signal_async(url)
+    ssl_task = asyncio.to_thread(ssl_certificate_signal, url)
+    
+    redirect_res, ssl_res = await asyncio.gather(redirect_task, ssl_task)
+    
+    return [
+        shortener_signal(url),
+        homograph_signal(url),
+        suspicious_keywords_signal(url),
+        length_entropy_signal(url),
+        path_query_entropy_signal(url),
+        excessive_subdomains_signal(url),
+        ip_based_url_signal(url),
+        redirect_res,
+        ssl_res,
+    ]
 
 
 def url_signals(url: str) -> List[Dict[str, Any]]:
