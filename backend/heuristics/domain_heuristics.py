@@ -437,6 +437,22 @@ def parked_domain_signal(domain: str, ov: Optional[Dict[str, Any]] = None) -> Di
     }
 
 
+def idn_punycode_signal(domain: str) -> Optional[Dict[str, Any]]:
+    sld = _sld(domain)
+    # Punycode domains are sometimes used for IDN/homoglyph attacks.
+    if sld.startswith("xn--"):
+        return {
+            "name": "IDN/Punycode",
+            "category": "domain",
+            "bucket": "structure",
+            "impact": 15,
+            "confidence": 0.6,
+            "description": "Domain uses punycode (can be normal, but also used in lookalike attacks).",
+            "evidence": {"sld": sld},
+        }
+    return None
+
+
 # Common homoglyph mapping for visual similarity checks
 HOMOGLYPH_MAP = {
     'l': 'i', '1': 'i', '|': 'i', 'í': 'i', 'ì': 'i', 'î': 'i', 'ï': 'i', 'ı': 'i',
@@ -493,36 +509,79 @@ def homoglyph_attack_signal(domain: str) -> Optional[Dict[str, Any]]:
     return None
 
 
+# Keyboard adjacency map for QWERTY layout
+KEYBOARD_ADJACENCY = {
+    'q': 'wa', 'w': 'qes', 'e': 'wrsd', 'r': 'etdf', 't': 'ryfg', 'y': 'tugh', 'u': 'yijh', 'i': 'uokj', 'o': 'ilpk', 'p': 'ol',
+    'a': 'qwsz', 's': 'wedaxz', 'd': 'erfsxc', 'f': 'rtgvcd', 'g': 'tyhbvf', 'h': 'yujnbg', 'j': 'uikmnh', 'k': 'iolmj', 'l': 'kop',
+    'z': 'asx', 'x': 'zsdc', 'c': 'xdfv', 'v': 'cfgb', 'b': 'vghn', 'n': 'bhjm', 'm': 'njk'
+}
+
+def _is_keyboard_neighbor(char1: str, char2: str) -> bool:
+    if char1 == char2: return True
+    return char2 in KEYBOARD_ADJACENCY.get(char1, "")
+
+
+def _identify_typo_type(typo: str, brand: str) -> Optional[str]:
+    """Categorize the type of typosquatting attack."""
+    if typo == brand: return None
+    
+    # 1. Omission (gogle)
+    for i in range(len(brand)):
+        if brand[:i] + brand[i+1:] == typo:
+            return "omission"
+            
+    # 2. Repetition (gooogle)
+    for i in range(len(typo)):
+        if typo[:i] + typo[i+1:] == brand and typo[i] == typo[i-1 if i > 0 else 0]:
+            return "repetition"
+            
+    # 3. Transposition (goolge)
+    for i in range(len(brand) - 1):
+        swapped = list(brand)
+        swapped[i], swapped[i+1] = swapped[i+1], swapped[i]
+        if "".join(swapped) == typo:
+            return "transposition"
+            
+    # 4. Keyboard Neighbor (goofle)
+    if len(typo) == len(brand):
+        diff_count = 0
+        is_neighbor = False
+        for c1, c2 in zip(typo, brand):
+            if c1 != c2:
+                diff_count += 1
+                if _is_keyboard_neighbor(c1, c2):
+                    is_neighbor = True
+        if diff_count == 1 and is_neighbor:
+            return "keyboard_neighbor"
+            
+    return "bit_flip" if _edit_distance(typo, brand) == 1 else None
+
+
 def typosquatting_signal(domain: str) -> Optional[Dict[str, Any]]:
     sld = _sld(domain)
     if not sld or len(sld) < 4:
         return None
 
-    # Punycode domains are sometimes used for IDN/homoglyph attacks.
-    if sld.startswith("xn--"):
-        return {
-            "name": "IDN/Punycode",
-            "category": "domain",
-            "bucket": "structure",
-            "impact": 15,
-            "confidence": 0.6,
-            "description": "Domain uses punycode (can be normal, but also used in lookalike attacks).",
-            "evidence": {"sld": sld},
-        }
+    # Skip reputable
+    normalized_domain = domain.lower().strip(".")
+    if normalized_domain.startswith("www."):
+        normalized_domain = normalized_domain[4:]
+    if normalized_domain in TOP_TIER_DOMAINS or reputation_service.is_reputable(domain):
+        return None
 
     for brand in BRANDS:
-        if brand == sld:
-            continue
-        dist = _edit_distance(sld, brand)
-        if dist == 1:
+        typo_type = _identify_typo_type(sld, brand)
+        
+        if typo_type:
+            impact = 32 if typo_type in ["omission", "transposition", "keyboard_neighbor"] else 25
             return {
                 "name": "Typosquatting Suspected",
                 "category": "domain",
                 "bucket": "structure",
-                "impact": 28,
-                "confidence": 0.7,
-                "description": f"Second-level domain '{sld}' is 1 edit away from brand '{brand}'.",
-                "evidence": {"sld": sld, "brand": brand, "edit_distance": dist},
+                "impact": impact,
+                "confidence": 0.8,
+                "description": f"Domain '{sld}' appears to be a '{typo_type}' typo of the protected brand '{brand}'.",
+                "evidence": {"sld": sld, "brand": brand, "type": typo_type},
             }
 
     return None
@@ -574,6 +633,10 @@ async def domain_signals_async(domain: str) -> List[Dict[str, Any]]:
     signals.extend(dns_validity_signals(domain, ov=ov))
     signals.append(parked_domain_signal(domain, ov=ov))
 
+    ips = idn_punycode_signal(domain)
+    if ips:
+        signals.append(ips)
+
     ts = typosquatting_signal(domain)
     if ts:
         signals.append(ts)
@@ -601,6 +664,10 @@ def domain_signals(domain: str) -> List[Dict[str, Any]]:
     signals.append(registrar_randomness_signal(domain))
     signals.extend(dns_validity_signals(domain))
     signals.append(parked_domain_signal(domain))
+
+    ips = idn_punycode_signal(domain)
+    if ips:
+        signals.append(ips)
 
     ts = typosquatting_signal(domain)
     if ts:
