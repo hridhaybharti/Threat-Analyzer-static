@@ -1,0 +1,1 @@
+export { analyzeIP } from "./analyzer";

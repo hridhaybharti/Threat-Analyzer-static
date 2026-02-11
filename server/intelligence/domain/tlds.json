@@ -1,0 +1,22 @@
+{
+  "description": "TLD abuse prevalence (non-deterministic, evidence-only)",
+  "lastUpdated": "2026-01-01",
+  "suspicious": [
+    "xyz",
+    "top",
+    "gq",
+    "tk",
+    "ml",
+    "cf",
+    "ga",
+    "buzz",
+    "rest"
+  ],
+  "neutral": [
+    "com",
+    "org",
+    "net",
+    "io",
+    "edu"
+  ]
+}

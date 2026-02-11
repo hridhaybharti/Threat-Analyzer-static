@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "default_weight": 1.0,
+  "by_bucket": {
+    "reputation": 1.0,
+    "structure": 1.0,
+    "network": 1.0
+  },
+  "by_signal": {
+    "Suspicious TLD": 1.0,
+    "Domain Age": 1.0,
+    "Registrar Reputation": 1.0,
+    "Registrar Randomness": 1.0,
+    "DNS Nameservers": 1.0,
+    "DNS A/AAAA": 1.0,
+    "Parked Domain Suspected": 1.0,
+    "Typosquatting Suspected": 1.0,
+    "IDN/Punycode": 1.0,
+    "URL Shortener Detected": 1.0,
+    "Homograph/IDN Indicator": 1.0,
+    "Suspicious Keywords": 1.0,
+    "URL Length & Entropy": 1.0,
+    "Path/Query Entropy": 1.0,
+    "Excessive Subdomains": 1.0,
+    "IP-Based URL": 1.0,
+    "Redirect Count": 1.0,
+    "Private vs Public IP": 1.0,
+    "IPv6 Specific Heuristics": 1.0,
+    "ASN / ISP Type": 1.0,
+    "Hosting Provider Cluster": 1.0,
+    "Country Risk": 1.0,
+    "TOR/VPN Indicators": 1.0,
+    "SSL Certificate": 1.0
+  }
+}

@@ -1,0 +1,1 @@
+export { analyzeDomain } from "./analyzer";

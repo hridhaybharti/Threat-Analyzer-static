@@ -1,0 +1,20 @@
+﻿## Python
+__pycache__/
+.pytest_cache/
+venv/
+.venv/
+env/
+*.pyc
+
+## Local DB
+*.sqlite3
+*.db
+backend/data/
+
+## Node
+node_modules/
+dist/
+
+## Editor
+.vscode/
+*.log

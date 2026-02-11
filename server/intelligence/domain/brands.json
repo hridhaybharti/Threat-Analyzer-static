@@ -1,0 +1,34 @@
+{
+  "meta": {
+    "description": "High-value brands frequently impersonated in phishing",
+    "source": "open-source aggregation",
+    "lastUpdated": "2026-01-01"
+  },
+  "brands": {
+    "critical": [
+      "paypal",
+      "visa",
+      "mastercard",
+      "bankofamerica",
+      "chase",
+      "wellsfargo",
+      "hsbc",
+      "coinbase",
+      "binance",
+      "metamask"
+    ],
+    "high": [
+      "apple",
+      "google",
+      "microsoft",
+      "amazon",
+      "facebook"
+    ],
+    "medium": [
+      "instagram",
+      "twitter",
+      "linkedin",
+      "discord"
+    ]
+  }
+}
