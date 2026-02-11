@@ -275,16 +275,18 @@ function IPReputationCard({ ip }: { ip: any }) {
 function VirusTotalCard({ vt }: { vt: any }) {
   if (!vt) {
     return (
-      <Card className="border-slate-800">
+      <Card className="border-slate-800 bg-amber-950/5">
         <CardHeader>
-          <CardTitle className="text-sm uppercase tracking-widest">
+          <CardTitle className="text-sm uppercase tracking-widest flex items-center gap-2">
+            <ShieldAlert className="w-4 h-4 text-amber-500" />
             VirusTotal
           </CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-slate-400">
-          VirusTotal is not configured for this server. Set{" "}
-          <code className="text-slate-300">VIRUSTOTAL_API_KEY</code> and re-run
-          the server, then analyze again.
+          <p className="mb-2">Intelligence engine offline.</p>
+          <p className="text-[11px] leading-relaxed opacity-70">
+            To enable deep multi-engine scanning, add your <code className="text-amber-200/80">VIRUSTOTAL_API_KEY</code> to the <code className="text-amber-200/80">.env</code> file and restart the server.
+          </p>
         </CardContent>
       </Card>
     );
@@ -345,16 +347,18 @@ function VirusTotalCard({ vt }: { vt: any }) {
 function AbuseIPDBCard({ abuse }: { abuse: any }) {
   if (!abuse) {
     return (
-      <Card className="border-slate-800">
+      <Card className="border-slate-800 bg-amber-950/5">
         <CardHeader>
-          <CardTitle className="text-sm uppercase tracking-widest">
+          <CardTitle className="text-sm uppercase tracking-widest flex items-center gap-2">
+            <ShieldAlert className="w-4 h-4 text-amber-500" />
             AbuseIPDB
           </CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-slate-400">
-          AbuseIPDB is not configured for this server (or no data is available).
-          Set <code className="text-slate-300">ABUSEIPDB_API_KEY</code> and
-          analyze an IP again.
+          <p className="mb-2">IP Reputation data restricted.</p>
+          <p className="text-[11px] leading-relaxed opacity-70">
+            Configure <code className="text-amber-200/80">ABUSEIPDB_API_KEY</code> in your environment to identify malicious IP behavior and abuse history.
+          </p>
         </CardContent>
       </Card>
     );
@@ -408,15 +412,15 @@ function AbuseIPDBCard({ abuse }: { abuse: any }) {
 function IPLocationCard({ loc }: { loc: any }) {
   if (!loc) {
     return (
-      <Card className="border-slate-800">
+      <Card className="border-slate-800 bg-slate-900/20">
         <CardHeader>
-          <CardTitle className="text-sm uppercase tracking-widest">
+          <CardTitle className="text-sm uppercase tracking-widest flex items-center gap-2">
+            <Globe className="w-4 h-4 text-slate-500" />
             IP Location
           </CardTitle>
         </CardHeader>
-        <CardContent className="text-sm text-slate-400">
-          Location is only available for IP analyses, and may be unavailable if
-          the geolocation provider is blocked.
+        <CardContent className="text-xs text-slate-500 italic">
+          Geolocation data is only calculated for IP-based targets.
         </CardContent>
       </Card>
     );
