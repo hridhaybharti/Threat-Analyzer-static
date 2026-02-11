@@ -25,10 +25,15 @@ def _connect() -> Iterator[sqlite3.Connection]:
     db_path = get_db_path()
     db_path.parent.mkdir(parents=True, exist_ok=True)
 
-    conn = sqlite3.connect(str(db_path), timeout=5.0)
+    # Use a longer timeout and check_same_thread=False for FastAPI concurrency.
+    conn = sqlite3.connect(str(db_path), timeout=15.0, check_same_thread=False)
     conn.row_factory = sqlite3.Row
 
-    # Ensure FK behavior is consistent for all connections.
+    # Performance and Reliability tuning:
+    # 1. Enable WAL mode (Write-Ahead Logging) for better concurrency.
+    # 2. Set synchronous to NORMAL for a massive speed boost without sacrificing safety.
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA synchronous=NORMAL")
     conn.execute("PRAGMA foreign_keys = ON")
 
     try:
@@ -39,6 +44,7 @@ def _connect() -> Iterator[sqlite3.Connection]:
 
 def init_db() -> None:
     with _connect() as conn:
+        # Tables are created within an implicit transaction.
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS analyses (
@@ -61,6 +67,8 @@ def init_db() -> None:
             )
             """
         )
+        # Create an index on target for faster future lookups/history search
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_analyses_target ON analyses(target)")
         conn.commit()
 
 
@@ -69,7 +77,7 @@ def _utc_now_iso() -> str:
 
 
 def save_analysis(result: Dict[str, Any], explain: Dict[str, Any]) -> int:
-    """Persist one analysis.
+    """Persist one analysis atomically.
 
     The public /api/analyze response is not modified, but we store additional explain data.
     """
@@ -77,32 +85,40 @@ def save_analysis(result: Dict[str, Any], explain: Dict[str, Any]) -> int:
     created_at = _utc_now_iso()
 
     with _connect() as conn:
-        cur = conn.execute(
-            """
-            INSERT INTO analyses (target, type, risk_score, verdict, confidence, created_at)
-            VALUES (?, ?, ?, ?, ?, ?)
-            """,
-            (
-                str(result.get("target")),
-                str(result.get("type")),
-                int(result.get("risk_score", 0)),
-                str(result.get("verdict")),
-                float(result.get("confidence", 0.0)),
-                created_at,
-            ),
-        )
-        analysis_id = int(cur.lastrowid)
+        try:
+            # Start an explicit transaction for atomicity
+            conn.execute("BEGIN TRANSACTION")
+            
+            cur = conn.execute(
+                """
+                INSERT INTO analyses (target, type, risk_score, verdict, confidence, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    str(result.get("target")),
+                    str(result.get("type")),
+                    int(result.get("risk_score", 0)),
+                    str(result.get("verdict")),
+                    float(result.get("confidence", 0.0)),
+                    created_at,
+                ),
+            )
+            analysis_id = int(cur.lastrowid)
 
-        conn.execute(
-            """
-            INSERT INTO analysis_explain (analysis_id, explain_json)
-            VALUES (?, ?)
-            """,
-            (analysis_id, json.dumps(explain, default=str)),
-        )
+            conn.execute(
+                """
+                INSERT INTO analysis_explain (analysis_id, explain_json)
+                VALUES (?, ?)
+                """,
+                (analysis_id, json.dumps(explain, default=str)),
+            )
 
-        conn.commit()
-        return analysis_id
+            conn.execute("COMMIT")
+            return analysis_id
+        except Exception as e:
+            conn.execute("ROLLBACK")
+            logger.error(f"Atomic save_analysis failed, transaction rolled back: {e}")
+            raise e
 
 
 def list_history(limit: int = 100) -> List[Dict[str, Any]]:

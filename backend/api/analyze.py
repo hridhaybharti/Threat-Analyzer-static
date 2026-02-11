@@ -71,8 +71,9 @@ async def analyze(req: AnalyzeRequest) -> Dict[str, Any]:
         try:
             analysis_id = save_analysis(result=result, explain=explain)
             persistence_ok = True
-        except Exception:
-            # Best-effort persistence: never fail the request if SQLite is unavailable.
+        except Exception as e:
+            # Best-effort persistence: log the error but don't fail the primary request.
+            logger.error(f"Persistence failed for {target}: {e}")
             persistence_ok = False
 
         latency_ms = int((time.perf_counter() - start) * 1000)
