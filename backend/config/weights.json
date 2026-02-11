@@ -16,6 +16,7 @@
     "DNS A/AAAA": 1.0,
     "Parked Domain Suspected": 1.0,
     "Typosquatting Suspected": 1.0,
+    "Homoglyph Lookalike Detected": 1.0,
     "IDN/Punycode": 1.0,
     "URL Shortener Detected": 1.0,
     "Homograph/IDN Indicator": 1.0,

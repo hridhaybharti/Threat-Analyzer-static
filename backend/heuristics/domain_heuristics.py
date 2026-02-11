@@ -437,6 +437,62 @@ def parked_domain_signal(domain: str, ov: Optional[Dict[str, Any]] = None) -> Di
     }
 
 
+# Common homoglyph mapping for visual similarity checks
+HOMOGLYPH_MAP = {
+    'l': 'i', '1': 'i', '|': 'i', 'í': 'i', 'ì': 'i', 'î': 'i', 'ï': 'i', 'ı': 'i',
+    '0': 'o', 'ó': 'o', 'ò': 'o', 'ô': 'o', 'õ': 'o', 'ö': 'o', 'ø': 'o',
+    'vv': 'w', 'rn': 'm',
+    'a': 'a', 'à': 'a', 'á': 'a', 'â': 'a', 'ã': 'a', 'ä': 'a', 'å': 'a', 'ɑ': 'a',
+    'e': 'e', 'è': 'e', 'é': 'e', 'ê': 'e', 'ë': 'e', 'е': 'e',
+    'i': 'i', 'ï': 'i', 'í': 'i', 'ì': 'i', 'î': 'i', 'ɩ': 'i',
+    's': 's', 'ś': 's', 'š': 's', 'ş': 's', 'ѕ': 's',
+}
+
+def _homoglyph_skeleton(text: str) -> str:
+    """Normalize text to a 'skeleton' form to detect visual lookalikes."""
+    t = text.lower()
+    # Handle complex multi-char homoglyphs first
+    t = t.replace('vv', 'w').replace('rn', 'm')
+    
+    skeleton = []
+    for char in t:
+        # Check map, otherwise keep char
+        skeleton.append(HOMOGLYPH_MAP.get(char, char))
+    
+    return "".join(skeleton)
+
+
+def homoglyph_attack_signal(domain: str) -> Optional[Dict[str, Any]]:
+    sld = _sld(domain)
+    if not sld or len(sld) < 4:
+        return None
+
+    # Don't flag domains that are already in our reputable list
+    normalized_domain = domain.lower().strip(".")
+    if normalized_domain.startswith("www."):
+        normalized_domain = normalized_domain[4:]
+    if normalized_domain in TOP_TIER_DOMAINS or reputation_service.is_reputable(domain):
+        return None
+
+    skeleton = _homoglyph_skeleton(sld)
+    
+    # Check if the skeleton matches a known high-value brand
+    for brand in BRANDS:
+        brand_skeleton = _homoglyph_skeleton(brand)
+        if skeleton == brand_skeleton and sld != brand:
+            return {
+                "name": "Homoglyph Lookalike Detected",
+                "category": "domain",
+                "bucket": "structure",
+                "impact": 35, # High risk impact
+                "confidence": 0.85,
+                "description": f"Domain '{sld}' is visually similar to the protected brand '{brand}' using homoglyph characters.",
+                "evidence": {"sld": sld, "lookalike_of": brand, "skeleton": skeleton},
+            }
+
+    return None
+
+
 def typosquatting_signal(domain: str) -> Optional[Dict[str, Any]]:
     sld = _sld(domain)
     if not sld or len(sld) < 4:
@@ -522,6 +578,10 @@ async def domain_signals_async(domain: str) -> List[Dict[str, Any]]:
     if ts:
         signals.append(ts)
 
+    hs = homoglyph_attack_signal(domain)
+    if hs:
+        signals.append(hs)
+
     return signals
 
 
@@ -545,5 +605,9 @@ def domain_signals(domain: str) -> List[Dict[str, Any]]:
     ts = typosquatting_signal(domain)
     if ts:
         signals.append(ts)
+
+    hs = homoglyph_attack_signal(domain)
+    if hs:
+        signals.append(hs)
 
     return signals
