@@ -7,6 +7,8 @@ import { api } from "@shared/routes";
 
 // 🔥 Evidence-based risk engine
 import { analyzeInput } from "./analysis/analyzeInput";
+import { reputationService } from "./analysis/reputation";
+import { secretsManager } from "./utils/secrets";
 
 /* =========================
    ROUTES (ENGINE-DRIVEN, DB-SAFE)
@@ -16,6 +18,16 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+
+  /**
+   * ENGINE STATUS & SECRETS (FOR DASHBOARD)
+   */
+  app.get("/api/reputation/status", (_req, res) => {
+    res.json({
+      reputation: reputationService.getStatus(),
+      secrets: secretsManager.getStatus(),
+    });
+  });
 
   /**
    * ANALYZE INPUT

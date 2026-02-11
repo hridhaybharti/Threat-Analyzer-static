@@ -37,7 +37,9 @@ export default function Dashboard() {
   const [userOverride, setUserOverride] = useState(false);
 
   const { mutate, isPending } = useCreateAnalysis();
-  const { data: reputation } = useReputationStatus();
+  const { data: status } = useReputationStatus();
+  const reputation = status?.reputation;
+  const secrets = status?.secrets;
 
   /* ---------------- Hybrid auto-detect ---------------- */
   useEffect(() => {
@@ -127,8 +129,8 @@ export default function Dashboard() {
             Analyze domains, IPs, and URLs using real security intelligence and heuristics.
           </p>
 
-          {/* Reputation Sync Status */}
-          <div className="flex justify-center pt-2">
+          {/* Engine & Secret Status */}
+          <div className="flex flex-wrap justify-center gap-2 pt-2">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -140,25 +142,48 @@ export default function Dashboard() {
                         : 'bg-slate-500/5 text-slate-400 border-slate-700 hover:bg-slate-500/10'}`}
                   >
                     <Database className={`w-3.5 h-3.5 ${!reputation?.loaded ? 'animate-pulse' : ''}`} />
-                    {reputation?.loaded ? `Global Reputation: ${reputation.count.toLocaleString()} domains` : 'Loading Global Reputation...'}
-                    {reputation?.loaded ? (
-                      <CheckCircle className="w-3 h-3 ml-0.5" />
-                    ) : (
-                      <Loader2 className="w-3 h-3 animate-spin ml-0.5" />
-                    )}
+                    {reputation?.loaded ? `Global Reputation: ${reputation.count.toLocaleString()}` : 'Loading Intelligence...'}
                   </Badge>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="max-w-[280px] p-3 bg-slate-900 border-slate-800 text-slate-300">
                   <div className="space-y-1.5">
                     <p className="font-semibold text-white">Trust Intelligence Sync</p>
                     <p className="text-xs leading-relaxed">
-                      Automatically synced with the <span className="text-emerald-400">Tranco Top 100K</span> authority list to identify and white-label reputable services.
+                      Automatically synced with the <span className="text-emerald-400">Tranco Top 100K</span> authority list.
                     </p>
-                    {reputation?.last_sync && (
-                      <p className="text-[10px] text-slate-500 pt-1 border-t border-slate-800">
-                        Last sync: {reputation.last_sync}
-                      </p>
-                    )}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            {/* API Key Health Badge */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge 
+                    variant="outline" 
+                    className={`gap-1.5 py-1 px-3 border transition-all duration-500 cursor-help
+                      ${secrets?.virusTotal.active || secrets?.abuseIPDB.active
+                        ? 'bg-blue-500/5 text-blue-400 border-blue-500/20 hover:bg-blue-500/10' 
+                        : 'bg-amber-500/5 text-amber-400 border-amber-500/20 hover:bg-amber-500/10'}`}
+                  >
+                    <Shield className="w-3.5 h-3.5" />
+                    {secrets?.virusTotal.active && secrets?.abuseIPDB.active ? 'All APIs Active' : 'Partial Intelligence'}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-[280px] p-3 bg-slate-900 border-slate-800 text-slate-300">
+                  <div className="space-y-2">
+                    <p className="font-semibold text-white">External API Status</p>
+                    <div className="grid grid-cols-2 gap-2 text-[11px]">
+                      <span className="text-slate-400">VirusTotal:</span>
+                      <span className={secrets?.virusTotal.active ? 'text-emerald-400' : 'text-rose-400'}>
+                        {secrets?.virusTotal.active ? 'Active' : 'Offline'}
+                      </span>
+                      <span className="text-slate-400">AbuseIPDB:</span>
+                      <span className={secrets?.abuseIPDB.active ? 'text-emerald-400' : 'text-rose-400'}>
+                        {secrets?.abuseIPDB.active ? 'Active' : 'Offline'}
+                      </span>
+                    </div>
                   </div>
                 </TooltipContent>
               </Tooltip>

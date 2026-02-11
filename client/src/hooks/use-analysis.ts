@@ -131,7 +131,7 @@ export function useClearHistory() {
   });
 }
 
-/* ---------------- Reputation Status ---------------- */
+/* ---------------- Reputation & Secrets Status ---------------- */
 
 export function useReputationStatus() {
   return useQuery({
@@ -140,14 +140,21 @@ export function useReputationStatus() {
       const res = await fetch("/api/reputation/status", {
         credentials: "include",
       });
-      if (!res.ok) throw new Error("Failed to fetch reputation status");
+      if (!res.ok) throw new Error("Failed to fetch engine status");
       return res.json() as Promise<{
-        loaded: boolean;
-        count: number;
-        last_sync: string | null;
-        source: string;
+        reputation: {
+          loaded: boolean;
+          count: number;
+          lastSync: string | null;
+          source: string;
+        };
+        secrets: {
+          virusTotal: { active: boolean; provider: string; masked: string };
+          abuseIPDB: { active: boolean; provider: string; masked: string };
+          ipApi: { active: boolean; provider: string; masked: string };
+        };
       }>;
     },
-    refetchInterval: 60000, // Poll every minute
+    refetchInterval: 60000,
   });
 }

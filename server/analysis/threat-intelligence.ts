@@ -4,6 +4,7 @@
  */
 
 import { isIP as netIsIP } from "net";
+import { secretsManager } from "../utils/secrets";
 
 export interface ThreatIntelReport {
   source: string;
@@ -190,7 +191,7 @@ function normalizeUrlLike(input: string): string {
 }
 
 export async function lookupVirusTotalDomain(domain: string): Promise<VirusTotalReport | null> {
-  const apiKey = env("VIRUSTOTAL_API_KEY");
+  const apiKey = secretsManager.getSecret("VIRUSTOTAL_API_KEY");
   if (!apiKey) return null;
 
   const clean = normalizeDomainLike(domain);
@@ -217,7 +218,7 @@ export async function lookupVirusTotalDomain(domain: string): Promise<VirusTotal
 }
 
 export async function lookupVirusTotalIP(ip: string): Promise<VirusTotalReport | null> {
-  const apiKey = env("VIRUSTOTAL_API_KEY");
+  const apiKey = secretsManager.getSecret("VIRUSTOTAL_API_KEY");
   if (!apiKey) return null;
 
   const clean = ip.trim();
@@ -246,7 +247,7 @@ export async function lookupVirusTotalIP(ip: string): Promise<VirusTotalReport |
 }
 
 export async function lookupVirusTotalUrl(url: string): Promise<VirusTotalReport | null> {
-  const apiKey = env("VIRUSTOTAL_API_KEY");
+  const apiKey = secretsManager.getSecret("VIRUSTOTAL_API_KEY");
   if (!apiKey) return null;
 
   const normalized = normalizeUrlLike(url);
@@ -294,7 +295,7 @@ export async function lookupVirusTotalUrl(url: string): Promise<VirusTotalReport
 }
 
 export async function checkAbuseIPDB(ip: string): Promise<AbuseIPDBReport | null> {
-  const apiKey = env("ABUSEIPDB_API_KEY");
+  const apiKey = secretsManager.getSecret("ABUSEIPDB_API_KEY");
   if (!apiKey) return null;
 
   const clean = ip.trim();
