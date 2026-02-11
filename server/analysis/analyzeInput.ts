@@ -11,6 +11,8 @@ import { analyzePort } from "./port-analysis";
 import { analyzeDomainReputation } from "./domain-reputation";
 import { analyzeRedirects } from "./redirect-analysis";
 import { analyzeMobileThreats } from "./mobile-threats";
+import { reputationService } from "./reputation";
+import { analyzeHomoglyphs } from "./homoglyph";
 import {
   checkIPReputation,
   checkAbuseIPDB,
@@ -142,6 +144,20 @@ export async function analyzeInput(type: InputType, input: string) {
     evidence.push(...reputationAnalysis.heuristics);
     score += reputationAnalysis.heuristics.reduce((sum, h) => sum + h.scoreImpact, 0);
 
+    // 🔥 Global Authority Reputation (Tranco 100K)
+    const reputationSignal = reputationService.getReputationSignal(analyzedInput);
+    if (reputationSignal) {
+      evidence.push(reputationSignal);
+      score += reputationSignal.scoreImpact;
+    }
+
+    // 🔥 Homoglyph Analysis
+    const homoglyphSignal = analyzeHomoglyphs(analyzedInput);
+    if (homoglyphSignal && !reputationSignal) { // Don't flag reputable sites
+      evidence.push(homoglyphSignal);
+      score += homoglyphSignal.scoreImpact;
+    }
+
     // 🔥 WHOIS Lookup
     try {
       whoisData = await lookupWhoisData(analyzedInput);
@@ -236,6 +252,7 @@ export async function analyzeInput(type: InputType, input: string) {
         urlToParse = "https://" + urlToParse;
       }
       url = new URL(urlToParse);
+      const hostname = url.hostname.toLowerCase();
 
       // URL Analysis
       const urlR = await analyzeURL(analyzedInput);
@@ -263,27 +280,41 @@ export async function analyzeInput(type: InputType, input: string) {
       score += mobileAnalysis.heuristics.reduce((sum, h) => sum + h.scoreImpact, 0);
 
       // Domain Analysis (including IDN and reputation)
-      const idnAnalysis = analyzeIDNDomain(url.hostname);
+      const idnAnalysis = analyzeIDNDomain(hostname);
       evidence.push(...idnAnalysis.heuristics);
       score += idnAnalysis.heuristics.reduce((sum, h) => sum + h.scoreImpact, 0);
 
-      const reputationAnalysis = analyzeDomainReputation(url.hostname);
+      const reputationAnalysis = analyzeDomainReputation(hostname);
       evidence.push(...reputationAnalysis.heuristics);
       score += reputationAnalysis.heuristics.reduce((sum, h) => sum + h.scoreImpact, 0);
 
-      const domainR = await analyzeDomain(url.hostname);
+      // 🔥 Global Authority Reputation (Tranco 100K)
+      const reputationSignal = reputationService.getReputationSignal(hostname);
+      if (reputationSignal) {
+        evidence.push(reputationSignal);
+        score += reputationSignal.scoreImpact;
+      }
+
+      // 🔥 Homoglyph Analysis
+      const homoglyphSignal = analyzeHomoglyphs(hostname);
+      if (homoglyphSignal && !reputationSignal) {
+        evidence.push(homoglyphSignal);
+        score += homoglyphSignal.scoreImpact;
+      }
+
+      const domainR = await analyzeDomain(hostname);
       score += domainR.score;
       evidence.push(...domainR.heuristics);
 
-      // 🔥 Get threat intelligence for URL/domain
+      // 🔥 Get threat intelligence for URL/domain (CLEAN HOSTNAME)
       try {
-        whoisData = await lookupWhoisData(url.hostname);
+        whoisData = await lookupWhoisData(hostname);
       } catch (err) {
         console.error("[analyzeInput] lookupWhoisData (url) failed:", err);
         whoisData = null;
       }
       try {
-        const urlIntel = await checkURLReputation(url.hostname);
+        const urlIntel = await checkURLReputation(hostname);
         urlIntelligence.push(...urlIntel);
       } catch (err) {
         console.error("[analyzeInput] checkURLReputation (url) failed:", err);

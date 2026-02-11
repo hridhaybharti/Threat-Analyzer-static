@@ -1,0 +1,11 @@
+{
+  "domains": [
+    "google.com", "youtube.com", "facebook.com", "microsoft.com", "apple.com", "amazon.com", 
+    "netflix.com", "wikipedia.org", "instagram.com", "reddit.com", "twitter.com", "linkedin.com",
+    "chatgpt.com", "openai.com", "github.com", "stackoverflow.com", "discord.com", "zoom.us",
+    "whatsapp.com", "telegram.org", "spotify.com", "twitch.tv", "adobe.com", "dropbox.com",
+    "medium.com", "quora.com", "pinterest.com", "tumblr.com", "vimeo.com", "flickr.com",
+    "bing.com", "yahoo.com", "duckduckgo.com", "baidu.com", "yandex.ru", "naver.com"
+  ],
+  "updated": "2026-02-11T18:00:00.000Z"
+}
