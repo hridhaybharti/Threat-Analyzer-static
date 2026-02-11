@@ -51,6 +51,7 @@
   body {
     @apply bg-background text-foreground antialiased selection:bg-primary/20 selection:text-primary font-sans;
     font-feature-settings: "rlig" 1, "calt" 1;
+    background-attachment: fixed;
   }
 
   h1,
@@ -63,17 +64,58 @@
   }
 }
 
-/* Custom Grid Background Pattern */
-.bg-grid-pattern {
-  background-size: 40px 40px;
-  background-image:
-    linear-gradient(to right, rgb(30 41 59 / 0.1) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(30 41 59 / 0.1) 1px, transparent 1px);
+/* Premium Animations */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
-/* Glassmorphism Card */
+@keyframes pulse-ring {
+  0% { transform: scale(0.95); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.8; }
+  100% { transform: scale(0.95); opacity: 1; }
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Premium UI Patterns */
+.bg-grid-pattern {
+  background-size: 50px 50px;
+  background-image:
+    linear-gradient(to right, rgb(30 41 59 / 0.15) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(30 41 59 / 0.15) 1px, transparent 1px);
+  mask-image: radial-gradient(circle at center, black, transparent 80%);
+}
+
+.premium-gradient-text {
+  @apply bg-clip-text text-transparent bg-gradient-to-br from-white via-slate-200 to-slate-500 font-bold;
+}
+
+/* Glassmorphism Evolution */
 .glass-card {
-  @apply bg-slate-950/50 backdrop-blur-xl border border-slate-800/50 shadow-2xl;
+  @apply bg-slate-900/40 backdrop-blur-2xl border border-white/[0.05] shadow-[0_8px_32px_0_rgba(0,0,0,0.36)];
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  @apply border-white/[0.1] shadow-[0_8px_48px_0_rgba(0,0,0,0.45)];
+  transform: translateY(-2px);
+}
+
+.input-glow {
+  @apply transition-all duration-300;
+}
+
+.input-glow:focus-within {
+  @apply ring-2 ring-emerald-500/20 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.1)];
 }
 
 /* Glow Effects */

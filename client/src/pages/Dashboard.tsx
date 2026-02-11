@@ -106,28 +106,32 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center p-4 bg-grid-pattern relative overflow-hidden">
-      {/* Ambient blobs */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl" />
+      {/* Background Cinematic Lighting */}
+      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-emerald-500/10 rounded-full blur-[120px] animate-pulse" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-600/10 rounded-full blur-[120px] animate-pulse" />
 
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
         className="w-full max-w-2xl relative z-10"
       >
-        {/* Header */}
-        <div className="text-center mb-10 space-y-4">
-          <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl mb-4">
-            <Shield className="w-12 h-12 text-emerald-500" />
+        {/* Header Section */}
+        <div className="text-center mb-12 space-y-6">
+          <motion.div 
+            className="inline-flex items-center justify-center p-4 rounded-3xl bg-slate-900/80 border border-white/10 shadow-[0_0_40px_rgba(16,185,129,0.1)] animate-float"
+          >
+            <Shield className="w-14 h-14 text-emerald-500" />
+          </motion.div>
+
+          <div className="space-y-2">
+            <h1 className="text-5xl md:text-6xl font-bold tracking-tighter premium-gradient-text">
+              Elixir Analyzer
+            </h1>
+            <p className="text-slate-400 text-lg max-w-lg mx-auto font-medium">
+              Next-generation structural intelligence for a safer internet.
+            </p>
           </div>
-
-          <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-slate-400">
-            Threat Intelligence
-          </h1>
-
-          <p className="text-slate-400 text-lg max-w-lg mx-auto">
-            Analyze domains, IPs, and URLs using real security intelligence and heuristics.
-          </p>
 
           {/* Engine & Secret Status */}
           <div className="flex flex-wrap justify-center gap-2 pt-2">
@@ -192,7 +196,7 @@ export default function Dashboard() {
         </div>
 
         {/* Input Card */}
-        <Card className="glass-card p-2 border-slate-800">
+        <Card className="glass-card p-3 border-white/5 overflow-hidden">
           <Tabs
             value={detectedType}
             onValueChange={(val) => {
@@ -201,27 +205,27 @@ export default function Dashboard() {
             }}
             className="w-full"
           >
-            <TabsList className="grid w-full grid-cols-3 bg-slate-900/50 p-1 rounded-lg border border-slate-800/50 mb-6">
-              <TabsTrigger value="domain" disabled={isPending}>
+            <TabsList className="grid w-full grid-cols-3 bg-slate-950/40 p-1.5 rounded-xl border border-white/5 mb-8">
+              <TabsTrigger value="domain" disabled={isPending} className="rounded-lg transition-all data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-400">
                 <Globe className="w-4 h-4 mr-2" /> Domain
               </TabsTrigger>
-              <TabsTrigger value="ip" disabled={isPending}>
+              <TabsTrigger value="ip" disabled={isPending} className="rounded-lg transition-all data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-400">
                 <Server className="w-4 h-4 mr-2" /> IP
               </TabsTrigger>
-              <TabsTrigger value="url" disabled={isPending}>
+              <TabsTrigger value="url" disabled={isPending} className="rounded-lg transition-all data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-400">
                 <LinkIcon className="w-4 h-4 mr-2" /> URL
               </TabsTrigger>
             </TabsList>
 
-            <form onSubmit={handleSubmit} className="relative p-2">
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <ActiveIcon className="h-5 w-5 text-slate-500 group-focus-within:text-emerald-500" />
+            <form onSubmit={handleSubmit} className="relative p-1">
+              <div className="relative group input-glow">
+                <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+                  <ActiveIcon className="h-6 w-6 text-slate-500 group-focus-within:text-emerald-500 transition-colors duration-300" />
                 </div>
 
                 <Input
                   placeholder={getPlaceholder(detectedType)}
-                  className="pl-12 h-14 bg-slate-950/50 border-slate-700 text-lg font-mono rounded-xl"
+                  className="pl-14 h-16 bg-slate-950/40 border-slate-800 text-xl font-mono rounded-2xl placeholder:text-slate-600 transition-all focus:border-emerald-500/50"
                   value={input}
                   onChange={(e) => {
                     setInput(e.target.value);
@@ -247,14 +251,14 @@ export default function Dashboard() {
                     type="submit"
                     size="lg"
                     disabled={isPending || !input.trim()}
-                    className="h-12 px-6 rounded-lg bg-emerald-600 hover:bg-emerald-500"
+                    className="h-14 px-8 rounded-xl bg-emerald-600 hover:bg-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.2)] transition-all active:scale-95"
                   >
                     {isPending ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <Loader2 className="w-6 h-6 animate-spin" />
                     ) : (
                       <>
-                        <span className="mr-2">Analyze</span>
-                        <Search className="w-4 h-4" />
+                        <span className="mr-2 font-bold uppercase tracking-widest text-sm">Analyze Now</span>
+                        <Search className="w-5 h-5" />
                       </>
                     )}
                   </Button>
