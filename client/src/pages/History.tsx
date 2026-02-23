@@ -70,48 +70,50 @@ export default function History() {
         <Card className="glass-card border-slate-800 overflow-hidden">
           <Table>
             <TableHeader className="bg-slate-900/50">
-              <TableRow className="border-slate-800 hover:bg-transparent">
-                <TableHead className="text-slate-400">Date</TableHead>
-                <TableHead className="text-slate-400">Target</TableHead>
-                <TableHead className="text-slate-400">Type</TableHead>
-                <TableHead className="text-slate-400">Risk Score</TableHead>
-                <TableHead className="text-slate-400">Verdict</TableHead>
-                <TableHead className="text-right text-slate-400">Action</TableHead>
+              <TableRow className="border-slate-800/60 hover:bg-transparent">
+                <TableHead className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Date</TableHead>
+                <TableHead className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Target</TableHead>
+                <TableHead className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Type</TableHead>
+                <TableHead className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Risk Profile</TableHead>
+                <TableHead className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Verdict</TableHead>
+                <TableHead className="text-right text-slate-400 font-bold uppercase tracking-widest text-[10px]">Details</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {history.map((item) => (
-                <TableRow key={item.id} className="border-slate-800 hover:bg-slate-800/30 transition-colors group">
+                <TableRow key={item.id} className="border-slate-800/60 hover:bg-emerald-500/[0.02] transition-colors group">
                   <TableCell className="text-slate-400 font-mono text-xs">
                     <div className="flex items-center gap-2">
-                      <Clock className="w-3 h-3" />
+                      <Clock className="w-3.5 h-3.5 text-slate-500" />
                       {item.createdAt ? format(new Date(item.createdAt), "MMM dd, HH:mm") : "-"}
                     </div>
                   </TableCell>
                   <TableCell className="font-medium text-slate-200">
-                    <span className="break-all">{item.input}</span>
+                    <span className="break-all font-mono text-sm">{item.input}</span>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className="uppercase text-[10px] tracking-wider border-slate-700 text-slate-400">
+                    <Badge variant="outline" className="uppercase text-[10px] tracking-wider border-slate-800 bg-slate-900/40 text-slate-400">
                       {item.type}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2">
-                      <div className="h-1.5 w-16 bg-slate-800 rounded-full overflow-hidden">
+                    <div className="flex items-center gap-3">
+                      <div className="h-1.5 w-20 bg-slate-900 rounded-full overflow-hidden border border-white/5">
                         <div 
-                          className={`h-full rounded-full ${
-                            item.riskScore < 30 ? "bg-emerald-500" : item.riskScore < 70 ? "bg-amber-500" : "bg-rose-500"
+                          className={`h-full rounded-full transition-all duration-1000 ${
+                            item.riskScore < 30 ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : 
+                            item.riskScore < 70 ? "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]" : 
+                            "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]"
                           }`} 
                           style={{ width: `${item.riskScore}%` }}
                         />
                       </div>
-                      <span className="text-xs font-mono text-slate-300">{item.riskScore}</span>
+                      <span className="text-xs font-mono font-bold text-slate-400">{item.riskScore}</span>
                     </div>
                   </TableCell>
                   <TableCell>
                     <Badge className={`
-                      uppercase text-[10px] tracking-wider font-semibold
+                      uppercase text-[10px] tracking-widest font-bold px-2 py-0.5 border
                       ${item.riskLevel === 'Safe' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20' : ''}
                       ${item.riskLevel === 'Suspicious' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/20' : ''}
                       ${item.riskLevel === 'Malicious' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20' : ''}
@@ -121,7 +123,7 @@ export default function History() {
                   </TableCell>
                   <TableCell className="text-right">
                     <Link href={`/analysis/${item.id}`}>
-                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0 hover:bg-slate-700 text-slate-400 hover:text-white">
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0 hover:bg-emerald-500/10 text-slate-500 hover:text-emerald-400 transition-colors">
                         <ArrowRight className="w-4 h-4" />
                       </Button>
                     </Link>

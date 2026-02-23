@@ -1,10 +1,11 @@
 import "dotenv/config";
-import express, { type Request, Response, NextFunction } from "express";
+import express from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { setupVite } from "./vite";
 import { createServer } from "http";
 import { reputationService } from "./analysis/reputation";
+import { globalErrorHandler } from "./utils/errorHandler";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 
@@ -12,14 +13,20 @@ const app = express();
 
 // Production Security Hardening
 app.use(helmet({
-  contentSecurityPolicy: false, // Disabled for dev convenience with local resources
+  contentSecurityPolicy: false, 
 }));
 
-// API Rate Limiting (Prevent Spam)
+// API Rate Limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: { message: "Too many requests from this IP, please try again after 15 minutes" }
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { 
+    error: "Rate Limit Exceeded",
+    message: "Too many requests from this IP, please try again after 15 minutes",
+    code: "ERR_RATE_LIMIT"
+  }
 });
 
 app.use("/api/", limiter);
@@ -91,19 +98,8 @@ app.use((req, res, next) => {
   // Register API routes
   await registerRoutes(httpServer, app);
 
-  // Global error handler
-  app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-
-    console.error("Internal Server Error:", err);
-
-    if (res.headersSent) {
-      return next(err);
-    }
-
-    return res.status(status).json({ message });
-  });
+  // Global error handler (Must be after routes)
+  app.use(globalErrorHandler);
 
   // Setup frontend serving
   if (app.get("env") === "development") {

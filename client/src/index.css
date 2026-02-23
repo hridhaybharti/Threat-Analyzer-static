@@ -127,9 +127,40 @@
   text-shadow: 0 0 20px rgba(244, 63, 94, 0.3);
 }
 
-/* Scrollbar */
+/* Page Transitions */
+.page-transition-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+.page-transition-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms, transform 300ms;
+}
+.page-transition-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+.page-transition-exit-active {
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 300ms, transform 300ms;
+}
+
+/* Skeleton Pulse Enhanced */
+@keyframes skeleton-pulse {
+  0% { background-color: rgb(30 41 59 / 0.5); }
+  50% { background-color: rgb(51 65 85 / 0.5); }
+  100% { background-color: rgb(30 41 59 / 0.5); }
+}
+
+.animate-skeleton {
+  animation: skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Custom Scrollbar Premium */
 ::-webkit-scrollbar {
-  width: 10px;
+  width: 8px;
 }
 
 ::-webkit-scrollbar-track {

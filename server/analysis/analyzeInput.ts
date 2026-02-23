@@ -16,6 +16,7 @@ import { analyzeHomoglyphs } from "./homoglyph";
 import { osintService } from "./osint-engine";
 import { archiveService } from "./archive-intel";
 import { visualEngine } from "./visual-engine";
+import { emailForensics } from "./email-forensics";
 import { webhookService } from "../utils/webhooks";
 import {
   lookupWhoisData,
@@ -25,7 +26,7 @@ import {
   type DetectionEngineResult,
 } from "./threat-intelligence";
 
-export type InputType = "ip" | "domain" | "url";
+export type InputType = "ip" | "domain" | "url" | "email";
 
 /**
  * Stage 1: Pre-processing & Sanitization
@@ -54,6 +55,7 @@ async function gatherIntelligence(type: InputType, target: string) {
     urlScan: null,
     archiveHistory: null,
     visualCapture: null,
+    emailIntel: null,
     detectionEngines: [],
     urlIntelligence: []
   };
@@ -79,6 +81,17 @@ async function gatherIntelligence(type: InputType, target: string) {
       // Background visual capture (best effort)
       const captureId = Buffer.from(target).toString('hex').substring(0, 12);
       tasks.push(visualEngine.captureSafeScreenshot(target, captureId).then(res => { intel.visualCapture = res; }));
+    }
+  } else if (type === "email") {
+    const headers = emailForensics.parseHeaders(target);
+    const links = emailForensics.extractLinks(target);
+    intel.emailIntel = { headers, links };
+
+    // Run intel on the primary origin IP
+    if (headers.received.length > 0) {
+      const originIP = headers.received[0];
+      tasks.push(osintService.getAbuseIPDB(originIP).then(res => { intel.abuseIPDB = res; }));
+      tasks.push(osintService.getIPLocation(originIP).then(res => { intel.ipLocation = res; }));
     }
   }
 
@@ -180,6 +193,20 @@ export async function analyzeInput(type: InputType, input: string) {
     evidence.push(...analyzePort(urlObj).heuristics);
     evidence.push(...analyzeRedirects(urlObj).heuristics);
     evidence.push(...analyzeMobileThreats(urlObj).heuristics);
+  }
+
+  if (type === "email" && intel.emailIntel) {
+    const socEngSignal = emailForensics.getSocialEngineeringSignal(input);
+    if (socEngSignal) {
+      evidence.push(socEngSignal);
+      score += socEngSignal.scoreImpact;
+    }
+
+    const authSignal = emailForensics.getAuthSignal(intel.emailIntel.headers.authentication);
+    if (authSignal) {
+      evidence.push(authSignal);
+      score += authSignal.scoreImpact;
+    }
   }
 
   // 4. Scoring & Final Verdict

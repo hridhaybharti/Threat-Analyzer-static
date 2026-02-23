@@ -64,11 +64,18 @@ export default function AnalysisResult() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <div className="container mx-auto px-4 py-8 max-w-6xl relative">
+      {/* Background Cinematic Lighting */}
+      <div className="fixed top-0 left-0 w-full h-full pointer-events-none -z-10 overflow-hidden">
+        <div className={`absolute top-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full blur-[120px] opacity-20 ${
+          analysis.riskScore > 70 ? 'bg-rose-500' : analysis.riskScore > 30 ? 'bg-amber-500' : 'bg-emerald-500'
+        }`} />
+      </div>
+
       <Button
         variant="ghost"
         onClick={() => setLocation("/")}
-        className="mb-8 text-slate-400 hover:text-emerald-400"
+        className="mb-8 text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/5"
       >
         <ArrowLeft className="w-4 h-4 mr-2" />
         Back to Dashboard
@@ -81,8 +88,8 @@ export default function AnalysisResult() {
           animate={{ opacity: 1, x: 0 }}
           className="space-y-6"
         >
-          <Card className="border-slate-800">
-            <CardHeader className="items-center">
+          <Card className="glass-card border-slate-800/50">
+            <CardHeader className="items-center pb-2">
               <RiskGauge
                 score={analysis.riskScore}
                 level={displayLevel}
@@ -93,21 +100,21 @@ export default function AnalysisResult() {
                 }
                 size={220}
               />
-              <div className={`text-2xl font-bold mt-4 ${statusColor}`}>
+              <div className={`text-3xl font-bold mt-4 tracking-tight ${statusColor}`}>
                 {displayLevel}
               </div>
-              <div className="text-xs text-slate-500 uppercase tracking-widest">
-                Verdict
+              <div className="text-[10px] text-slate-500 uppercase tracking-[0.2em] font-mono mt-1">
+                Security Verdict
               </div>
 
               {/* Export Button */}
-              <div className="pt-4 w-full">
+              <div className="pt-6 w-full">
                 <Button 
                   onClick={() => window.open(`/api/analysis/${id}/export`, '_blank')}
-                  className="w-full bg-slate-800 hover:bg-slate-700 text-white border border-white/5 gap-2"
+                  className="w-full bg-slate-800/50 hover:bg-emerald-600 hover:text-white transition-all duration-300 text-slate-300 border border-white/5 gap-2 h-11"
                 >
                   <FileDown className="w-4 h-4" />
-                  Export Intelligence Report
+                  Download Intelligence PDF
                 </Button>
               </div>
             </CardHeader>
@@ -139,14 +146,14 @@ export default function AnalysisResult() {
             </CardContent>
           </Card>
 
-          <Card className="border-slate-800">
+          <Card className="glass-card border-slate-800/50">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
                 <ShieldAlert className="w-5 h-5 text-emerald-500" />
-                Summary
+                Intelligence Summary
               </CardTitle>
             </CardHeader>
-            <CardContent className="text-slate-400 text-sm">
+            <CardContent className="text-slate-400 text-sm leading-relaxed">
               {analysis.summary}
             </CardContent>
           </Card>
@@ -158,22 +165,22 @@ export default function AnalysisResult() {
           animate={{ opacity: 1, x: 0 }}
           className="lg:col-span-2"
         >
-          <Tabs defaultValue="heuristics">
-            <TabsList className="mb-6">
-              <TabsTrigger value="heuristics">
-                Security Heuristics
+          <Tabs defaultValue="heuristics" className="w-full">
+            <TabsList className="mb-6 bg-slate-900/50 p-1 rounded-xl border border-white/5">
+              <TabsTrigger value="heuristics" className="rounded-lg data-[state=active]:bg-emerald-500/10 data-[state=active]:text-emerald-400">
+                Structural Heuristics
               </TabsTrigger>
-              <TabsTrigger value="technical">
-                Technical Data
+              <TabsTrigger value="technical" className="rounded-lg data-[state=active]:bg-emerald-500/10 data-[state=active]:text-emerald-400">
+                Technical OSINT
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="heuristics">
-              <Card className="border-slate-800">
+              <Card className="glass-card border-slate-800/50">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-lg">
                     <CheckCircle className="w-5 h-5 text-emerald-500" />
-                    Checks
+                    Security Signals
                   </CardTitle>
                 </CardHeader>
                 <CardContent>

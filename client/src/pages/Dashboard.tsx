@@ -111,9 +111,9 @@ export default function Dashboard() {
       <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-600/10 rounded-full blur-[120px] animate-pulse" />
 
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         className="w-full max-w-2xl relative z-10"
       >
         {/* Header Section */}
@@ -124,12 +124,12 @@ export default function Dashboard() {
             <Shield className="w-14 h-14 text-emerald-500" />
           </motion.div>
 
-          <div className="space-y-2">
-            <h1 className="text-5xl md:text-6xl font-bold tracking-tighter premium-gradient-text">
+          <div className="space-y-4">
+            <h1 className="text-5xl md:text-7xl font-bold tracking-tighter premium-gradient-text">
               Elixir Analyzer
             </h1>
-            <p className="text-slate-400 text-lg max-w-lg mx-auto font-medium">
-              Next-generation structural intelligence for a safer internet.
+            <p className="text-slate-400 text-lg max-w-lg mx-auto font-medium leading-relaxed">
+              Real-time structural intelligence and threat correlation engine.
             </p>
           </div>
 
@@ -225,7 +225,7 @@ export default function Dashboard() {
 
                 <Input
                   placeholder={getPlaceholder(detectedType)}
-                  className="pl-14 h-16 bg-slate-950/40 border-slate-800 text-xl font-mono rounded-2xl placeholder:text-slate-600 transition-all focus:border-emerald-500/50"
+                  className="pl-14 h-16 bg-slate-950/40 border-slate-800 text-xl font-mono rounded-2xl placeholder:text-slate-600 transition-all focus:border-emerald-500/50 shadow-inner"
                   value={input}
                   onChange={(e) => {
                     setInput(e.target.value);
@@ -251,14 +251,14 @@ export default function Dashboard() {
                     type="submit"
                     size="lg"
                     disabled={isPending || !input.trim()}
-                    className="h-14 px-8 rounded-xl bg-emerald-600 hover:bg-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.2)] transition-all active:scale-95"
+                    className="h-14 px-8 rounded-xl bg-emerald-600 hover:bg-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.2)] transition-all active:scale-95 group/btn"
                   >
                     {isPending ? (
                       <Loader2 className="w-6 h-6 animate-spin" />
                     ) : (
                       <>
-                        <span className="mr-2 font-bold uppercase tracking-widest text-sm">Analyze Now</span>
-                        <Search className="w-5 h-5" />
+                        <span className="mr-2 font-bold uppercase tracking-widest text-xs">Initialize Analysis</span>
+                        <Search className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
                       </>
                     )}
                   </Button>

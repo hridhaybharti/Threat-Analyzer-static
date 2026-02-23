@@ -125,7 +125,7 @@ export const analysisDetailsSchema = z.object({
   signal_count: z.number().optional(),
   threatIntelligence: threatIntelligenceSchema.optional(),
   metadata: z.object({
-    inputType: z.enum(["ip", "domain", "url"]),
+    inputType: z.enum(["ip", "domain", "url", "email"]),
     sanitizedInput: z.string(),
     hasCorrelations: z.boolean(),
   }).optional(),
@@ -140,7 +140,7 @@ export type AnalysisDetails = z.infer<typeof analysisDetailsSchema>;
 export const analyses = pgTable("analyses", {
   id: serial("id").primaryKey(),
 
-  type: text("type").notNull(), // domain | ip | url
+  type: text("type").notNull(), // domain | ip | url | email
   input: text("input").notNull(),
 
   // ✅ REQUIRED legacy + UI fields
