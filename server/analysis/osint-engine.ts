@@ -28,16 +28,23 @@ class OSINTService {
   }
 
   /**
-   * Safe JSON fetch with timeout
+   * Safe JSON fetch with timeout and simple retry
    */
-  private async fetchSafe(url: string, headers: Record<string, string>, timeout = 5000) {
-    try {
-      const response = await axios.get(url, { headers, timeout });
-      return response.data;
-    } catch (error: any) {
-      console.error(`[OSINT] Request to ${url} failed:`, error.message);
-      return null;
+  private async fetchSafe(url: string, headers: Record<string, string>, timeout = 5000, retries = 1) {
+    for (let i = 0; i <= retries; i++) {
+      try {
+        const response = await axios.get(url, { headers, timeout });
+        return response.data;
+      } catch (error: any) {
+        if (i === retries) {
+          console.error(`[OSINT] Final failure for ${url}:`, error.message);
+          return null;
+        }
+        console.warn(`[OSINT] Retry ${i + 1} for ${url}...`);
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait before retry
+      }
     }
+    return null;
   }
 
   /**

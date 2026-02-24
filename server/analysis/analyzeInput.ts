@@ -62,43 +62,47 @@ async function gatherIntelligence(type: InputType, target: string) {
 
   const tasks: Promise<void>[] = [];
 
-  if (type === "ip") {
-    tasks.push(osintService.getAbuseIPDB(target).then(res => { intel.abuseIPDB = res; }));
-    tasks.push(osintService.getVirusTotal(target, "ip").then(res => { intel.virusTotal = res; }));
-    tasks.push(osintService.getIPLocation(target).then(res => { intel.ipLocation = res; }));
-    tasks.push(runDetectionEngines(target).then(res => { intel.detectionEngines = res; }));
-  } else if (type === "domain" || type === "url") {
-    const hostname = type === "url" ? new URL(target.startsWith('http') ? target : `https://${target}`).hostname : target;
+  try {
+    if (type === "ip") {
+      tasks.push(osintService.getAbuseIPDB(target).then(res => { intel.abuseIPDB = res; }).catch(e => console.error("[OSINT] AbuseIPDB failed:", e.message)));
+      tasks.push(osintService.getVirusTotal(target, "ip").then(res => { intel.virusTotal = res; }).catch(e => console.error("[OSINT] VirusTotal failed:", e.message)));
+      tasks.push(osintService.getIPLocation(target).then(res => { intel.ipLocation = res; }).catch(e => console.error("[OSINT] IPLocation failed:", e.message)));
+      tasks.push(runDetectionEngines(target).then(res => { intel.detectionEngines = res; }).catch(e => console.error("[OSINT] Engines failed:", e.message)));
+    } else if (type === "domain" || type === "url") {
+      const hostname = type === "url" ? new URL(target.startsWith('http') ? target : `https://${target}`).hostname : target;
 
-    tasks.push(lookupWhoisData(hostname).then(res => { intel.whoisData = res; }));
-    tasks.push(osintService.getVirusTotal(hostname, type === "url" ? "url" : "domain").then(res => { intel.virusTotal = res; }));
-    tasks.push(checkURLReputation(hostname).then(res => { intel.urlIntelligence = res; }));
-    tasks.push(runDetectionEngines(hostname).then(res => { intel.detectionEngines = res; }));
-    tasks.push(archiveService.getHistory(hostname).then(res => { intel.archiveHistory = res; }));
-    
-    if (type === "url") {
-      tasks.push(osintService.getURLScan(target).then(res => { intel.urlScan = res; }));
-      // Background visual capture (best effort)
-      const captureId = Buffer.from(target).toString('hex').substring(0, 12);
-      tasks.push(visualEngine.captureSafeScreenshot(target, captureId).then(res => { intel.visualCapture = res; }));
-    }
-  } else if (type === "email") {
-    const headers = emailForensics.parseHeaders(target);
-    const links = emailForensics.extractLinks(target);
-    intel.emailIntel = { headers, links };
+      tasks.push(lookupWhoisData(hostname).then(res => { intel.whoisData = res; }).catch(e => console.error("[OSINT] WHOIS failed:", e.message)));
+      tasks.push(osintService.getVirusTotal(hostname, type === "url" ? "url" : "domain").then(res => { intel.virusTotal = res; }).catch(e => console.error("[OSINT] VirusTotal failed:", e.message)));
+      tasks.push(checkURLReputation(hostname).then(res => { intel.urlIntelligence = res; }).catch(e => console.error("[OSINT] URL Reputation failed:", e.message)));
+      tasks.push(runDetectionEngines(hostname).then(res => { intel.detectionEngines = res; }).catch(e => console.error("[OSINT] Engines failed:", e.message)));
+      tasks.push(archiveService.getHistory(hostname).then(res => { intel.archiveHistory = res; }).catch(e => console.error("[OSINT] Archive failed:", e.message)));
+      
+      if (type === "url") {
+        tasks.push(osintService.getURLScan(target).then(res => { intel.urlScan = res; }).catch(e => console.error("[OSINT] URLScan failed:", e.message)));
+        // Background visual capture (best effort)
+        const captureId = Buffer.from(target).toString('hex').substring(0, 12);
+        tasks.push(visualEngine.captureSafeScreenshot(target, captureId).then(res => { intel.visualCapture = res; }).catch(e => console.error("[OSINT] Visual Capture failed:", e.message)));
+      }
+    } else if (type === "email") {
+      const headers = emailForensics.parseHeaders(target);
+      const links = emailForensics.extractLinks(target);
+      intel.emailIntel = { headers, links };
 
-    // Run intel on the primary origin IP
-    if (headers.received.length > 0) {
-      const originIP = headers.received[0];
-      tasks.push(osintService.getAbuseIPDB(originIP).then(res => { intel.abuseIPDB = res; }));
-      tasks.push(osintService.getIPLocation(originIP).then(res => { intel.ipLocation = res; }));
+      // Run intel on the primary origin IP
+      if (headers.received.length > 0) {
+        const originIP = headers.received[0];
+        tasks.push(osintService.getAbuseIPDB(originIP).then(res => { intel.abuseIPDB = res; }).catch(e => console.error("[OSINT] Email IP lookup failed:", e.message)));
+        tasks.push(osintService.getIPLocation(originIP).then(res => { intel.ipLocation = res; }).catch(e => console.error("[OSINT] Email Geo lookup failed:", e.message)));
+      }
     }
+  } catch (globalError: any) {
+    console.error("[Intelligence Gathering] Critical stage failure:", globalError.message);
   }
 
-  // Optimized timeout: 10s for deep OSINT
+  // Optimized timeout: 12s for deep OSINT
   await Promise.race([
     Promise.allSettled(tasks),
-    new Promise(resolve => setTimeout(resolve, 10000))
+    new Promise(resolve => setTimeout(resolve, 12000))
   ]);
 
   return intel;
